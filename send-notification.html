@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Send Notification</title>
+  <link rel="stylesheet" href="sdb.css" />
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin-dashboard.html">Add Member</a>
+    <a href="view-members.html">View Members</a>
+    <a href="create-bills.html">Create Bills</a>
+    <a href="fee-packages.html">Fee Packages</a>
+    <a href="send-notification.html">Send Notification</a>
+    <a href="supplement-store.html">Supplement Store</a>
+    <a href="diet-details.html">Diet Details</a>
+    <a href="report-export.html">Export Reports</a>
+    <a href="index.html">Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>Send Notification</h1>
+    <form id="notificationForm">
+      <label for="message">Notification Message</label>
+      <textarea id="message" rows="5" required></textarea>
+
+      <label for="target">Send To Package</label>
+      <select id="target">
+        <option value="All">All Members</option>
+      </select>
+
+      <button type="submit">Send</button>
+    </form>
+
+    <hr>
+    <h2>Assign Monthly Notification</h2>
+    <form id="monthlyNotificationForm">
+      <label for="monthlyMessage">Monthly Notification Message</label>
+      <textarea id="monthlyMessage" rows="3" required>Dear member, your monthly fee is due. Kindly pay at the front desk.</textarea>
+      <button type="submit">Assign Monthly Notification</button>
+    </form>
+
+    <h2>Previous Notifications</h2>
+    <ul id="notificationList"></ul>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+      authDomain: "gym-management-system-540ea.firebaseapp.com",
+      projectId: "gym-management-system-540ea",
+      storageBucket: "gym-management-system-540ea.appspot.com",
+      messagingSenderId: "368679749818",
+      appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Load fee packages into dropdown
+    const targetSelect = document.getElementById("target");
+    const loadPackages = async () => {
+      const snapshot = await getDocs(collection(db, "packages"));
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const option = document.createElement("option");
+        option.value = data.title;
+        option.textContent = data.title;
+        targetSelect.appendChild(option);
+      });
+    };
+    loadPackages();
+
+    // Send regular notification
+    document.getElementById("notificationForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = document.getElementById("message").value;
+      const target = document.getElementById("target").value;
+
+      try {
+        await addDoc(collection(db, "notifications"), {
+          message,
+          target,
+          type: "manual",
+          timestamp: new Date()
+        });
+        alert("Notification sent!");
+        e.target.reset();
+        loadNotifications();
+      } catch (err) {
+        alert("Failed to send: " + err.message);
+      }
+    });
+
+    // Assign monthly notification
+    document.getElementById("monthlyNotificationForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const monthlyMessage = document.getElementById("monthlyMessage").value;
+
+      try {
+        await addDoc(collection(db, "notifications"), {
+          message: monthlyMessage,
+          target: "All",
+          type: "monthly",
+          timestamp: new Date()
+        });
+        alert("Monthly notification assigned!");
+        e.target.reset();
+        loadNotifications();
+      } catch (err) {
+        alert("Failed to assign: " + err.message);
+      }
+    });
+
+    // Display all notifications
+    const loadNotifications = async () => {
+      const ul = document.getElementById("notificationList");
+      ul.innerHTML = "";
+      const snapshot = await getDocs(collection(db, "notifications"));
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const type = data.type === "monthly" ? "📅 Monthly" : "🔔 Manual";
+        const li = document.createElement("li");
+        li.textContent = `[${type}] [${data.target}] ${data.message}`;
+        ul.appendChild(li);
+      });
+    };
+
+    loadNotifications();
+  </script>
+</body>
+</html>

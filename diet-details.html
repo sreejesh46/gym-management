@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Diet Details</title>
+  <link rel="stylesheet" href="sdb.css" />
+  <style>
+    .diet-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .diet-card {
+      background: #2e2e2e;
+      border-radius: 10px;
+      padding: 1rem;
+      box-shadow: 0 0 5px #00ff88;
+    }
+
+    .diet-card h3 {
+      color: #00ff88;
+      margin-bottom: 0.5rem;
+    }
+
+    .diet-card p {
+      font-size: 0.9rem;
+    }
+
+    .diet-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin: 0.5rem 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin-dashboard.html">Add Member</a>
+    <a href="view-members.html">View Members</a>
+    <a href="create-bills.html">Create Bills</a>
+    <a href="fee-packages.html">Fee Packages</a>
+    <a href="send-notification.html">Send Notification</a>
+    <a href="supplement-store.html">Supplement Store</a>
+    <a href="diet-details.html">Diet Details</a>
+    <a href="report-export.html">Export Reports</a>
+    <a href="index.html">Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>Diet Plans</h1>
+    <form id="dietForm">
+      <label for="title">Plan Title</label>
+      <input type="text" id="title" required />
+
+      <label for="audience">Target Audience</label>
+      <input type="text" id="audience" required />
+
+      <label for="breakfast">Breakfast</label>
+      <input type="text" id="breakfast" required />
+
+      <label for="lunch">Lunch</label>
+      <input type="text" id="lunch" required />
+
+      <label for="dinner">Dinner</label>
+      <input type="text" id="dinner" required />
+
+      <label for="snacks">Snacks</label>
+      <input type="text" id="snacks" required />
+
+      <label for="image">Image URL (optional)</label>
+      <input type="url" id="image" placeholder="Optional image of the diet plan" />
+
+      <button type="submit">Add Diet Plan</button>
+    </form>
+
+    <div class="diet-container" id="dietList"></div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+        authDomain: "gym-management-system-540ea.firebaseapp.com",
+        projectId: "gym-management-system-540ea",
+        storageBucket: "gym-management-system-540ea.appspot.com",
+        messagingSenderId: "368679749818",
+        appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const form = document.getElementById("dietForm");
+      const dietList = document.getElementById("dietList");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const newPlan = {
+          title: document.getElementById("title").value,
+          audience: document.getElementById("audience").value,
+          breakfast: document.getElementById("breakfast").value,
+          lunch: document.getElementById("lunch").value,
+          dinner: document.getElementById("dinner").value,
+          snacks: document.getElementById("snacks").value,
+          image: document.getElementById("image").value || ""
+        };
+
+        await addDoc(collection(db, "dietPlans"), newPlan);
+        form.reset();
+        loadDietPlans();
+      });
+
+      async function loadDietPlans() {
+        dietList.innerHTML = "";
+        const snapshot = await getDocs(collection(db, "dietPlans"));
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          const div = document.createElement("div");
+          div.className = "diet-card";
+          div.innerHTML = `
+            <h3>${data.title}</h3>
+            <p><strong>Audience:</strong> ${data.audience}</p>
+            <p><strong>Breakfast:</strong> ${data.breakfast}</p>
+            <p><strong>Lunch:</strong> ${data.lunch}</p>
+            <p><strong>Dinner:</strong> ${data.dinner}</p>
+            <p><strong>Snacks:</strong> ${data.snacks}</p>
+            ${data.image ? `<img src="${data.image}" alt="${data.title} Image">` : ""}
+          `;
+          dietList.appendChild(div);
+        });
+      }
+
+      loadDietPlans();
+    </script>
+  </div>
+</body>
+</html>

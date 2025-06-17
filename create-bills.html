@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create Bills - GYM Management</title>
+  <link rel="stylesheet" href="sdb.css" />
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin-dashboard.html">Add Member</a>
+    <a href="view-members.html">View Members</a>
+    <a href="create-bills.html">Create Bills</a>
+    <a href="fee-packages.html">Fee Packages</a>
+    <a href="send-notification.html">Send Notification</a>
+    <a href="supplement-store.html">Supplement Store</a>
+    <a href="diet-details.html">Diet Details</a>
+    <a href="report-export.html">Export Reports</a>
+    <a href="index.html">Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>Create Bill</h1>
+
+    <form id="createBillForm">
+      <label for="member">Select Member:</label>
+      <select id="member" required>
+        <option value="">-- Select Member --</option>
+      </select>
+
+      <label for="amount">Amount (₹):</label>
+      <input type="number" id="amount" required />
+
+      <label for="date">Billing Date:</label>
+      <input type="date" id="date" required />
+
+      <label for="dueDate">Due Date:</label>
+      <input type="date" id="dueDate" required />
+
+      <button type="submit">Create Bill</button>
+    </form>
+
+    <p id="statusMsg" style="margin-top: 1rem; font-weight: bold;"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+      authDomain: "gym-management-system-540ea.firebaseapp.com",
+      projectId: "gym-management-system-540ea",
+      storageBucket: "gym-management-system-540ea.appspot.com",
+      messagingSenderId: "368679749818",
+      appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Populate members dropdown
+    const memberSelect = document.getElementById("member");
+    const membersSnap = await getDocs(collection(db, "members"));
+    membersSnap.forEach((doc) => {
+      const m = doc.data();
+      const option = document.createElement("option");
+      option.value = doc.id;
+      option.textContent = `${m.name} (${m.email})`;
+      memberSelect.appendChild(option);
+    });
+
+    // Form submission
+    document.getElementById("createBillForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const memberId = document.getElementById("member").value;
+      const amount = document.getElementById("amount").value;
+      const date = document.getElementById("date").value;
+      const dueDate = document.getElementById("dueDate").value;
+
+      try {
+        await addDoc(collection(db, "bills"), {
+          memberId,
+          amount,
+          date,
+          dueDate,
+          status: "Unpaid"
+        });
+        document.getElementById("statusMsg").textContent = "✅ Bill created successfully!";
+        e.target.reset();
+      } catch (err) {
+        console.error(err);
+        document.getElementById("statusMsg").textContent = "❌ Failed to create bill.";
+      }
+    });
+  </script>
+
+</body>
+</html>

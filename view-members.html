@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="sdb.css" />
+  <title>View Members - Admin Dashboard</title>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin-dashboard.html">Add Member</a>
+    <a href="view-members.html">View Members</a>
+    <a href="create-bills.html">Create Bills</a>
+    <a href="fee-packages.html">Fee Packages</a>
+    <a href="send-notification.html">Send Notification</a>
+    <a href="supplement-store.html">Supplement Store</a>
+    <a href="diet-details.html">Diet Details</a>
+    <a href="index.html">Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>All Registered Members</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Member ID</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Package</th>
+        </tr>
+      </thead>
+      <tbody id="membersTable">
+        <!-- Members will appear here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+      authDomain: "gym-management-system-540ea.firebaseapp.com",
+      projectId: "gym-management-system-540ea",
+      storageBucket: "gym-management-system-540ea.appspot.com",
+      messagingSenderId: "368679749818",
+      appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const membersTable = document.getElementById("membersTable");
+
+    const loadMembers = () => {
+      const membersRef = collection(db, "members");
+      onSnapshot(membersRef, (snapshot) => {
+        membersTable.innerHTML = "";
+        snapshot.forEach((docSnap) => {
+          const member = docSnap.data();
+          const row = `
+            <tr>
+              <td>${docSnap.id}</td>
+              <td>${member.name}</td>
+              <td>${member.email}</td>
+              <td>${member.phone}</td>
+              <td>${member.package}</td>
+            </tr>
+          `;
+          membersTable.innerHTML += row;
+        });
+      });
+    };
+
+    loadMembers();
+  </script>
+
+</body>
+</html>
