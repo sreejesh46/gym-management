@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="css/mr.css" />
+  <title>Member Registration - Legacy Fitness Club</title>
+</head>
+<body>
+  <header>
+    <h1>Legacy Fitness Club</h1>
+  </header>
+
+  <div class="form-container">
+    <h2>Member Registration</h2>
+    <form id="memberRegisterForm">
+      <h3>Personal Information</h3>
+      <input type="text" placeholder="Full Name" id="fullName" required />
+      <input type="date" placeholder="Date of Birth" id="dob" required />
+      <input type="text" placeholder="Address" id="address" required />
+      <input type="text" placeholder="City" id="city" required />
+      <input type="text" placeholder="State" id="state" required />
+      <input type="text" placeholder="Zip Code" id="zip" required />
+      <input type="tel" placeholder="Phone Number" id="phone" required />
+      <input type="email" placeholder="Email Address" id="email" required />
+      <input type="password" placeholder="Password" id="password" required />
+
+      <label for="package">Fee Package</label>
+      <select id="package" required>
+        <option value="">Loading packages...</option>
+      </select>
+
+      <h3>Emergency Contact Information</h3>
+      <input type="text" placeholder="Full Name" id="emergencyName" required />
+      <input type="tel" placeholder="Phone Number" id="emergencyPhone" required />
+      <input type="text" placeholder="Relationship" id="emergencyRelation" required />
+
+      <h3>Health & Fitness Information</h3>
+      <textarea placeholder="Any medical conditions or injuries?" id="medical" rows="3"></textarea>
+      <textarea placeholder="Fitness Goals (e.g. weight loss, muscle gain)" id="goals" rows="2"></textarea>
+
+      <button type="submit">Register</button>
+
+      <p class="error" id="errorMsg"></p>
+      <p class="success" id="successMsg"></p>
+
+      <p style="text-align: center; margin-top: 1rem;">
+        <a href="member-login.html" style="color: #00ff88; text-decoration: none;">&larr; Back to Login</a>
+      </p>
+    </form>
+  </div>
+
+  <!-- Firebase Scripts -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDocs, collection } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+      authDomain: "gym-management-system-540ea.firebaseapp.com",
+      projectId: "gym-management-system-540ea",
+      storageBucket: "gym-management-system-540ea.appspot.com",
+      messagingSenderId: "368679749818",
+      appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const form = document.getElementById("memberRegisterForm");
+    const errorMsg = document.getElementById("errorMsg");
+    const successMsg = document.getElementById("successMsg");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      const selectedPackage = document.getElementById("package").value;
+
+      const data = {
+        fullName: document.getElementById("fullName").value,
+        dob: document.getElementById("dob").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value,
+        state: document.getElementById("state").value,
+        zip: document.getElementById("zip").value,
+        phone: document.getElementById("phone").value,
+        email: email,
+        role: "member",
+        package: selectedPackage,
+        emergency: {
+          name: document.getElementById("emergencyName").value,
+          phone: document.getElementById("emergencyPhone").value,
+          relation: document.getElementById("emergencyRelation").value
+        },
+        medical: document.getElementById("medical").value,
+        goals: document.getElementById("goals").value
+      };
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const uid = userCredential.user.uid;
+
+      // Also save to 'members' collection
+        await setDoc(doc(db, "members", uid), {
+         name: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        package: document.getElementById("package").value
+        });
+        successMsg.textContent = "Registration successful! You can now log in.";
+        errorMsg.textContent = "";
+        form.reset();
+      } catch (error) {
+        errorMsg.textContent = "Registration failed. " + error.message;
+        successMsg.textContent = "";
+      }
+    });
+
+    const loadPackages = async () => {
+      const packageSelect = document.getElementById("package");
+      packageSelect.innerHTML = `<option value="">Select a Package</option>`;
+
+      const packageSnapshot = await getDocs(collection(db, "packages"));
+      packageSnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        const option = document.createElement("option");
+        option.value = data.title;
+        option.textContent = `${data.title} - ₹${data.price} (${data.duration} months)`;
+        packageSelect.appendChild(option);
+      });
+    };
+
+    loadPackages();
+  </script>
+</body>
+</html>

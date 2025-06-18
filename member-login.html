@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <link rel="stylesheet" href="css/style2.css" />
+  <link rel="stylesheet" href="css/style2.css" />
   <title>Member Login - GYM Management</title>
 </head>
 <body>
-        <header>
+  <header>
     <h1>Legacy Fitness Club</h1>
   </header>
 
@@ -23,12 +23,19 @@
       <button type="submit">Login</button>
       <p class="error" id="errorMsg"></p>
     </form>
+
+    <!-- 🔗 Create Account Link -->
+    <div style="margin-top: 10px; text-align: center;">
+      <p>Don't have an account? <a href="member-register.html">Create Account</a></p>
+      <p><a href="index.html" style="color: #00ff88; text-decoration: none;">&larr; Back to Login</a></p>
+    </div>
   </div>
 
   <!-- Firebase scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
@@ -41,6 +48,7 @@
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db = getFirestore(app);
 
     const form = document.getElementById("memberLoginForm");
     const errorMsg = document.getElementById("errorMsg");
@@ -51,9 +59,24 @@
       const password = document.getElementById("password").value;
 
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        window.location.href = "member-dashboard.html"; // redirect to member dashboard
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const uid = userCredential.user.uid;
+
+        const docRef = doc(db, "members", uid); // 👈 collection: members
+        const userDoc = await getDoc(docRef);   // 👈 fetch member data
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role === "member") {
+            window.location.href = "member-dashboard.html";
+          } else {
+            errorMsg.textContent = "Access denied. Not a member.";
+          }
+        } else {
+          errorMsg.textContent = "User data not found in members collection.";
+        }
       } catch (error) {
+        console.error("Login error:", error);
         errorMsg.textContent = "Invalid email or password.";
       }
     });

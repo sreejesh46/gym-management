@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="sdb.css" />
+  <title>Member Dashboard - GYM Management</title>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Member Panel</h2>
+    <a href="#">Dashboard</a>
+    <a href="view-bills.html">View Bills</a>
+    <a href="diet-plan.html">Diet Plan</a>
+    <a href="supplements.html">Supplements</a>
+    <a href="index.html">Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>Welcome, <span id="memberName">Loading...</span></h1>
+
+    <div class="info-box">
+      <p><strong>Email:</strong> <span id="memberEmail">Loading...</span></p>
+      <p><strong>Phone:</strong> <span id="memberPhone">Loading...</span></p>
+      <p><strong>Package:</strong> <span id="memberPackage">Loading...</span></p>
+    </div>
+
+    <h2>Bill Notifications</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Bill ID</th>
+          <th>Amount</th>
+          <th>Due Date</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="billTable">
+        <!-- Bills will be populated here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+  import {
+    getFirestore,
+    doc,
+    getDoc,
+    collection,
+    query,
+    where,
+    getDocs
+  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+    authDomain: "gym-management-system-540ea.firebaseapp.com",
+    projectId: "gym-management-system-540ea",
+    storageBucket: "gym-management-system-540ea.appspot.com",
+    messagingSenderId: "368679749818",
+    appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const uid = user.uid;
+      const userDoc = await getDoc(doc(db, "members", uid));
+
+      if (userDoc.exists()) {
+        const member = userDoc.data();
+        document.getElementById("memberName").textContent = member.name;
+        document.getElementById("memberEmail").textContent = member.email;
+        document.getElementById("memberPhone").textContent = member.phone;
+        document.getElementById("memberPackage").textContent = member.package;
+
+        // Load bills for this member using email
+        loadBills(member.email);
+      } else {
+        alert("Member record not found.");
+        window.location.href = "index.html";
+      }
+    } else {
+      alert("You are not logged in.");
+      window.location.href = "index.html";
+    }
+  });
+
+  const loadBills = async (email) => {
+    const q = query(collection(db, "bills"), where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+    const billTable = document.getElementById("billTable");
+    billTable.innerHTML = "";
+
+    querySnapshot.forEach((docSnap) => {
+      const bill = docSnap.data();
+      const row = `
+        <tr>
+          <td>${docSnap.id}</td>
+          <td>₹${bill.amount}</td>
+          <td>${bill.dueDate}</td>
+          <td>${bill.status}</td>
+        </tr>
+      `;
+      billTable.innerHTML += row;
+    });
+  };
+</script>
+</script
+</body>
+</html>
