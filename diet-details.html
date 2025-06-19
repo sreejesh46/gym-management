@@ -41,6 +41,19 @@
     }
   </style>
 </head>
+<script>
+  // Highlight active sidebar tab based on current page
+  window.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('.sidebar a');
+    const currentPage = location.pathname.split('/').pop();
+
+    links.forEach(link => {
+      if (link.getAttribute('href') === currentPage) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
 <body>
   <div class="sidebar">
     <h2>Admin Panel</h2>

@@ -9,6 +9,19 @@
   <link href="https://fonts.googleapis.com/css2?family=Matangi:wght@300..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
+<script>
+  // Highlight active sidebar tab based on current page
+  window.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('.sidebar a');
+    const currentPage = location.pathname.split('/').pop();
+
+    links.forEach(link => {
+      if (link.getAttribute('href') === currentPage) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
 <body>
   <div class="sidebar">
     <h2>Admin Panel</h2>
@@ -29,10 +42,10 @@
       <label for="message">Notification Message</label>
       <textarea id="message" rows="5" required></textarea>
 
-      <label for="target">Send To Package</label>
-      <select id="target">
-        <option value="All">All Members</option>
-      </select>
+<label for="targetMember">Send To Member</label>
+<select id="targetMember">
+  <option value="All">All Members</option>
+</select>
 
       <button type="submit">Send</button>
     </form>
@@ -66,32 +79,32 @@
     const db = getFirestore(app);
 
     // Load fee packages into dropdown
-    const targetSelect = document.getElementById("target");
-    const loadPackages = async () => {
-      const snapshot = await getDocs(collection(db, "packages"));
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const option = document.createElement("option");
-        option.value = data.title;
-        option.textContent = data.title;
-        targetSelect.appendChild(option);
-      });
-    };
-    loadPackages();
+const targetSelect = document.getElementById("targetMember");
+const loadMembers = async () => {
+  const snapshot = await getDocs(collection(db, "members"));
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const option = document.createElement("option");
+    option.value = doc.id; // 🔑 Use member UID
+    option.textContent = `${data.name} (${data.email})`;
+    targetSelect.appendChild(option);
+  });
+};
+loadMembers();
 
     // Send regular notification
     document.getElementById("notificationForm").addEventListener("submit", async (e) => {
       e.preventDefault();
       const message = document.getElementById("message").value;
-      const target = document.getElementById("target").value;
+      const memberId = document.getElementById("targetMember").value;
 
       try {
-        await addDoc(collection(db, "notifications"), {
-          message,
-          target,
-          type: "manual",
-          timestamp: new Date()
-        });
+await addDoc(collection(db, "notifications"), {
+  message,
+  memberId, // 🔑 Directly assign to member UID or "All"
+  type: "manual",
+  timestamp: new Date()
+});
         alert("Notification sent!");
         e.target.reset();
         loadNotifications();
@@ -121,18 +134,18 @@
     });
 
     // Display all notifications
-    const loadNotifications = async () => {
-      const ul = document.getElementById("notificationList");
-      ul.innerHTML = "";
-      const snapshot = await getDocs(collection(db, "notifications"));
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        const type = data.type === "monthly" ? "📅 Monthly" : "🔔 Manual";
-        const li = document.createElement("li");
-        li.textContent = `[${type}] [${data.target}] ${data.message}`;
-        ul.appendChild(li);
-      });
-    };
+const loadNotifications = async () => {
+  const ul = document.getElementById("notificationList");
+  ul.innerHTML = "";
+  const snapshot = await getDocs(collection(db, "notifications"));
+  snapshot.forEach(doc => {
+    const data = doc.data();
+    const type = data.type === "monthly" ? "📅 Monthly" : "🔔 Manual";
+    const li = document.createElement("li");
+    li.textContent = `[${type}] [${data.memberId}] ${data.message}`;
+    ul.appendChild(li);
+  });
+};
 
     loadNotifications();
   </script>

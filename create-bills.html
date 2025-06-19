@@ -5,11 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Create Bills - GYM Management</title>
   <link rel="stylesheet" href="sdb.css" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Matangi:wght@300..900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
+<script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('.sidebar a');
+    const currentPage = location.pathname.split('/').pop();
+    links.forEach(link => {
+      if (link.getAttribute('href') === currentPage) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
+<div id="toast" style="position: fixed; bottom: 30px; right: 30px; background: #333; color: #fff; padding: 12px 20px; border-radius: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); display: none; z-index: 1000;"></div>
 <body>
 
   <div class="sidebar">
@@ -25,6 +37,8 @@
     <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
 
+  <!-- ... HEAD and sidebar remain unchanged ... -->
+
   <div class="main">
     <h1>Create Bill</h1>
 
@@ -34,8 +48,11 @@
         <option value="">-- Select Member --</option>
       </select>
 
+      <label for="package">Package:</label>
+      <input type="text" id="package" readonly />
+
       <label for="amount">Amount (₹):</label>
-      <input type="number" id="amount" required />
+      <input type="number" id="amount" readonly />
 
       <label for="date">Billing Date:</label>
       <input type="date" id="date" required />
@@ -46,12 +63,32 @@
       <button type="submit">Create Bill</button>
     </form>
 
+    <h2>Billing History</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Billing Date</th>
+          <th>Due Date</th>
+          <th>Amount (₹)</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="billHistory">
+        <!-- History rows go here -->
+      </tbody>
+    </table>
+
     <p id="statusMsg" style="margin-top: 1rem; font-weight: bold;"></p>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
@@ -65,41 +102,108 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Populate members dropdown
     const memberSelect = document.getElementById("member");
+    const packageInput = document.getElementById("package");
+    const amountInput = document.getElementById("amount");
+    const historyTable = document.getElementById("billHistory");
+
     const membersSnap = await getDocs(collection(db, "members"));
-    membersSnap.forEach((doc) => {
-      const m = doc.data();
+    const memberMap = new Map();
+
+    membersSnap.forEach((docSnap) => {
+      const member = docSnap.data();
+      memberMap.set(docSnap.id, member);
       const option = document.createElement("option");
-      option.value = doc.id;
-      option.textContent = `${m.name} (${m.email})`;
+      option.value = docSnap.id;
+      option.textContent = `${member.name} (${member.email})`;
       memberSelect.appendChild(option);
     });
 
-    // Form submission
+    // ✅ New function to load billing history
+    async function loadBillingHistory(memberId) {
+      historyTable.innerHTML = ""; // clear old data
+
+      const billsSnap = await getDocs(collection(db, "bills"));
+      billsSnap.forEach((doc) => {
+        const bill = doc.data();
+        if (bill.memberId === memberId) {
+          const row = `
+            <tr>
+              <td>${bill.date}</td>
+              <td>${bill.dueDate}</td>
+              <td>₹${bill.amount}</td>
+              <td>${bill.status}</td>
+            </tr>
+          `;
+          historyTable.innerHTML += row;
+        }
+      });
+    }
+
+    memberSelect.addEventListener("change", async (e) => {
+      const selectedId = e.target.value;
+      const member = memberMap.get(selectedId);
+      if (!member) return;
+
+      packageInput.value = member.package;
+
+      const packageSnap = await getDocs(collection(db, "packages"));
+      let matchedPackage = null;
+      const memberPkg = member.package?.trim().toLowerCase();
+
+      packageSnap.forEach((doc) => {
+        const data = doc.data();
+        const pkgTitle = data.title?.trim().toLowerCase();
+        if (pkgTitle === memberPkg) {
+          matchedPackage = data;
+        }
+      });
+
+      amountInput.value = matchedPackage ? matchedPackage.price : "";
+
+      // ✅ Load history when member changes
+      await loadBillingHistory(selectedId);
+    });
+
     document.getElementById("createBillForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const memberId = document.getElementById("member").value;
-      const amount = document.getElementById("amount").value;
+      const memberId = memberSelect.value;
+      const amount = amountInput.value;
       const date = document.getElementById("date").value;
       const dueDate = document.getElementById("dueDate").value;
+      function showToast(message, success = true) {
+  const toast = document.getElementById("toast");
+  toast.textContent = message;
+  toast.style.backgroundColor = success ? "#28a745" : "#dc3545"; // green or red
+  toast.style.display = "block";
 
-      try {
-        await addDoc(collection(db, "bills"), {
-          memberId,
-          amount,
-          date,
-          dueDate,
-          status: "Unpaid"
-        });
-        document.getElementById("statusMsg").textContent = "✅ Bill created successfully!";
-        e.target.reset();
-      } catch (err) {
-        console.error(err);
-        document.getElementById("statusMsg").textContent = "❌ Failed to create bill.";
-      }
+  setTimeout(() => {
+    toast.style.display = "none";
+  }, 3000); // Hide after 3s
+}
+
+
+try {
+  await addDoc(collection(db, "bills"), {
+    memberId,
+    amount,
+    date,
+    dueDate,
+    status: "Unpaid"
+  });
+
+  showToast(" Bill created successfully!", true);
+  e.target.reset();
+  packageInput.value = "";
+  amountInput.value = "";
+
+  await loadBillingHistory(memberId);
+} catch (err) {
+  console.error(err);
+  showToast("Failed to create bill.", false);
+}
     });
   </script>
-
 </body>
 </html>
+
