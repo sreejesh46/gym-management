@@ -31,9 +31,3 @@ A web-based Gym Management System built with HTML, CSS, JavaScript, and Firebase
 
 ---
 
-## 🚀 Getting Started
-
-### 1. Clone the repository
-```bash
-git clone https://github.com/your-username/gym-management.git
-cd gym-management
