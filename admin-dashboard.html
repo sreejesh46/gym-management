@@ -24,20 +24,20 @@
   });
 </script>
 <body>
+  
 
-  <div class="sidebar">
-    <h2>Admin Panel</h2>
-    <a href="admin-dashboard.html"><i class="fas fa-user-plus"></i> Add Member</a>
-    <a href="view-members.html"><i class="fas fa-users"></i> View Members</a>
-    <a href="create-bills.html"><i class="fas fa-file-invoice"></i> Create Bills</a>
-    <a href="fee-packages.html"><i class="fas fa-tags"></i> Fee Packages</a>
-    <a href="send-notification.html"><i class="fas fa-bell"></i> Send Notification</a>
-    <a href="supplement-store.html"><i class="fas fa-store"></i> Supplement Store</a>
-    <a href="diet-details.html"><i class="fas fa-utensils"></i> Diet Details</a>
-    <a href="report-export.html"><i class="fas fa-file-export"></i> Export Reports</a>
-    <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    
-  </div>
+<div class="sidebar">
+  <h2>Admin Panel</h2>
+  <a href="admin-dashboard.html"><i class="fas fa-user-plus"></i> <span class="sidebar-text">Add Member</span></a>
+  <a href="view-members.html"><i class="fas fa-users"></i> <span class="sidebar-text">View Members</span></a>
+  <a href="create-bills.html"><i class="fas fa-file-invoice"></i> <span class="sidebar-text">Create Bills</span></a>
+  <a href="fee-packages.html"><i class="fas fa-tags"></i> <span class="sidebar-text">Fee Packages</span></a>
+  <a href="send-notification.html"><i class="fas fa-bell"></i> <span class="sidebar-text">Send Notification</span></a>
+  <a href="supplement-store.html"><i class="fas fa-store"></i> <span class="sidebar-text">Supplement Store</span></a>
+  <a href="diet-details.html"><i class="fas fa-utensils"></i> <span class="sidebar-text">Diet Details</span></a>
+  <a href="report-export.html"><i class="fas fa-file-export"></i> <span class="sidebar-text">Export Reports</span></a>
+  <a href="index.html"><i class="fas fa-sign-out-alt"></i> <span class="sidebar-text">Logout</span></a>
+</div>
 
   <div class="main">
     <h1>Add New Member</h1>
@@ -59,23 +59,24 @@
 
       <button type="submit">Add Member</button>
     </form>
-    <h2>Members List</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Member ID</th>
-          <th>Name</th>
-          <th>Package</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="membersTable">
-        <!-- Firebase data will populate here -->
-      </tbody>
-    </table>
-  </div>
+<h2>Members List</h2>
+<div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>Member ID</th>
+        <th>Name</th>
+        <th>Package</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="membersTable">
+      <!-- Firebase data -->
+    </tbody>
+  </table>
+</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
