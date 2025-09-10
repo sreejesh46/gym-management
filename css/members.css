@@ -1,51 +1,52 @@
-    * {
-      box-sizing: border-box;
-    }
-    html, body {
+* {
+  box-sizing: border-box;
+}
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
 }
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #1e1e1e;
-      color: #fff;
-      display: flex;
-      height: 100%;
-    }
-    
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #1e1e1e;
+  color: #fff;
+  display: flex;
+  height: 100%;
+}
 
 /* Sidebar */
-  .sidebar {
-    width: 50px; /* collapsed width */
-   background-color: #00bc1c;
-    padding: 1.5rem 0.5rem;
-    overflow-y: auto;
-    transition: width 0.5s ease;
-    position: relative;
-    z-index: 10;
-    }
+.sidebar {
+  width: 57px; /* collapsed width */
+  background-color: #2a2a2a;
+  padding: 1.5rem 0.5rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.5s ease;
+  position: relative;
+  z-index: 10;
+}
 
-  .sidebar:hover {
+.sidebar:hover {
   width: 220px;
-    }
+}
 
-  .sidebar h2 {
+.sidebar h2 {
   font-size: 1.5rem;
   color: #00ff88;
   text-align: center;
   opacity: 0;
   transition: opacity 0.3s;
   white-space: nowrap;
-    }
+}
 
-  .sidebar:hover h2 {
-    opacity: 1;
-    }
+.sidebar:hover h2 {
+  opacity: 1;
+}
 
-  .sidebar a {
+.sidebar a {
   display: flex;
   align-items: center;
   color: #ccc;
@@ -55,105 +56,108 @@
   border-radius: 6px;
   transition: 0.2s;
   white-space: nowrap;
-    }
+}
 
-  .sidebar a i {
+.sidebar a i {
   font-size: 1.2rem;
   min-width: 24px;
   text-align: center;
   margin-right: 10px;
 }
 
-  .sidebar .sidebar-text {
+.sidebar .sidebar-text {
   opacity: 0;
   transition: opacity 0.3s;
-  }
+}
 
-  .sidebar:hover .sidebar-text {
+.sidebar:hover .sidebar-text {
   opacity: 1;
-  }
+}
 
-  .sidebar a:hover,
-  .sidebar a.active {
-  background-color: #0a0d0c;
+.sidebar a:hover,
+.sidebar a.active {
+  background-color: #00ff88;
   color: #000;
-  }
-   
-    .main {
-      flex-grow: 3;
-      padding: 1rem;
-    }
+}
 
-    .main h1 {
-      color: #00ff88;
-      margin-bottom: 1rem;
-    }
+.main {
+  flex-grow: 3;
+  padding: 1rem;
+}
 
-    form {
-      background: #2e2e2e;
-      padding: 1rem;
-      border-radius: 8px;
-      max-width: 500px;
-    }
+.main h1 {
+  color: #00ff88;
+  margin-bottom: 1rem;
+}
 
-    label {
-      display: block;
-      margin: 1rem 0 0.3rem;
-    }
+form {
+  background: #2e2e2e;
+  padding: 1rem;
+  border-radius: 8px;
+  max-width: 500px;
+}
 
-    input,
-    select {
-      width: 100%;
-      padding: 0.7rem;
-      border-radius: 5px;
-      border: none;
-      background: #444;
-      color: white;
-    }
+label {
+  display: block;
+  margin: 1rem 0 0.3rem;
+}
 
-    button {
-      margin-top: 1rem;
-      padding: 0.7rem 1.5rem;
-      background-color: #00ff88;
-      color: #000;
-      border: none;
-      border-radius: 5px;
-      font-weight: bold;
-      cursor: pointer;
-    }
+input,
+select {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 5px;
+  border: none;
+  background: #444;
+  color: white;
+}
 
-    table {
-      width: 100%;
-      margin-top: 2rem;
-      border-collapse: collapse;
-    }
+button {
+  margin-top: 1rem;
+  padding: 0.7rem 1.5rem;
+  background-color: #00ff88;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
 
-    table, th, td {
-      border: 1px solid #444;
-    }
+table {
+  width: 100%;
+  margin-top: 2rem;
+  border-collapse: collapse;
+}
 
-    th, td {
-      padding: 10px;
-      text-align: center;
-    }
+table,
+th,
+td {
+  border: 1px solid #444;
+}
 
-    th {
-      background-color: #00ff88;
-      color: #000;
-    }
+th,
+td {
+  padding: 10px;
+  text-align: center;
+}
 
-    .actions button {
-      background: #ff4d4d;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+th {
+  background-color: #00ff88;
+  color: #000;
+}
 
-    .actions button:hover {
-      background: red;
-    }
+.actions button {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.actions button:hover {
+  background: red;
+}
 .notification-container {
   position: fixed;
   top: 20px;
@@ -228,7 +232,3 @@
   margin-top: 4px;
   font-size: 0.85rem;
 }
-
-
-
-   
