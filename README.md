@@ -94,8 +94,5 @@ Role-based access control (multiple admins/trainers)
 
 ## 📜 License
 
-This project is open-source and available under the MIT License.
-
-© Copyright
 
 © 2025 Sreejesh Mohan. All Rights Reserved.
