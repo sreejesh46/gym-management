@@ -66,8 +66,8 @@ This project enables **gym admins** to manage members, fee packages, bills, diet
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/your-username/gym-management-system.git
-   cd gym-management-system
+   git clone https://github.com/sreejesh46/gym-management.git
+   cd gym-management
 Set up Firebase:
 
 Create a Firebase project
@@ -80,7 +80,7 @@ Run the project:
 
 Open index.html in your browser
 
-Or deploy using Firebase Hosting or GitHub Pages
+Or view the live hosted version: [Gym Management System](https://gym-management-system-540ea.web.app/)
 
 ## 🔮 Upcoming Improvements
 
