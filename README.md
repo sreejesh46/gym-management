@@ -68,3 +68,34 @@ This project enables **gym admins** to manage members, fee packages, bills, diet
    ```bash
    git clone https://github.com/your-username/gym-management-system.git
    cd gym-management-system
+Set up Firebase:
+
+Create a Firebase project
+
+Enable Firestore and Authentication
+
+Add your Firebase config in the scripts
+
+Run the project:
+
+Open index.html in your browser
+
+Or deploy using Firebase Hosting or GitHub Pages
+
+## 🔮 Upcoming Improvements
+
+Member profile editing
+
+Online payment integration
+
+Attendance tracking
+
+Role-based access control (multiple admins/trainers)
+
+## 📜 License
+
+This project is open-source and available under the MIT License.
+
+© Copyright
+
+© 2025 Sreejesh Mohan. All Rights Reserved.
