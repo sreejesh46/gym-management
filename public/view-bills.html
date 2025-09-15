@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>View Bills - GYM Management</title>
+  <link rel="stylesheet" href="css/members.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+
+  <div class="sidebar">
+    <h2>Member Panel</h2>
+    <a href="member-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="view-bills.html" class="active"><i class="fas fa-file-invoice"></i> View Bills</a>
+  <a href="diet-plan.html" id="dietPlanLink" style="display:none;"><i class="fas fa-utensils"></i> Diet Plan</a>
+  <a href="supplements.html" id="supplementsLink" style="display:none;"><i class="fas fa-capsules"></i> Supplements</a>
+    <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>Your Bill Receipts</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Bill ID</th>
+          <th>Amount</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Months Paid</th>
+        </tr>
+      </thead>
+      <tbody id="billTable">
+        <!-- Bills will be dynamically inserted here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      query,
+      where,
+      getDocs
+    } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+      authDomain: "gym-management-system-540ea.firebaseapp.com",
+      projectId: "gym-management-system-540ea",
+      storageBucket: "gym-management-system-540ea.appspot.com",
+      messagingSenderId: "368679749818",
+      appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const uid = user.uid;
+        // Get member package and hide links if Basic Fitness
+        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js');
+        const userDoc = await getDoc(doc(db, "members", uid));
+        if (userDoc.exists()) {
+          const member = userDoc.data();
+          const pkg = (member.package || '').toLowerCase();
+          const dietLink = document.getElementById('dietPlanLink');
+          const suppLink = document.getElementById('supplementsLink');
+          if (pkg.includes('basic')) {
+            dietLink.style.display = 'none';
+            suppLink.style.display = 'none';
+          } else {
+            dietLink.style.display = '';
+            suppLink.style.display = '';
+          }
+        }
+        loadBills(uid);
+      } else {
+        alert("You are not logged in.");
+        window.location.href = "index.html";
+      }
+    });
+
+    async function loadBills(memberId) {
+      const q = query(collection(db, "bills"), where("memberId", "==", memberId));
+      const snapshot = await getDocs(q);
+      const table = document.getElementById("billTable");
+      table.innerHTML = "";
+
+      snapshot.forEach(doc => {
+  const bill = doc.data();
+  const row = `
+    <tr>
+      <td>${doc.id}</td>
+      <td>₹${bill.amount}</td>
+      <td>${bill.dueDate}</td>
+      <td>${bill.status}</td>
+      <td>${bill.monthsPaid || "-"}</td>
+    </tr>
+  `;
+  table.innerHTML += row;
+});
+    }
+    function calculateMonths(startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  return (
+    (end.getFullYear() - start.getFullYear()) * 12 +
+    (end.getMonth() - start.getMonth()) +
+    1
+  );
+}
+  </script>
+</body>
+</html>

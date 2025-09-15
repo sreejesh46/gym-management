@@ -1,0 +1,257 @@
+/* Blur and lock for restricted sections */
+.sidebar a[style*="blur"] {
+  position: relative;
+}
+.sidebar a span i.fas.fa-lock {
+  color: #ff4d4d;
+  margin-left: 6px;
+  font-size: 1.1em;
+  vertical-align: middle;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #1e1e1e;
+  color: #fff;
+  display: flex;
+  height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  height: 100vh; /* full viewport height */
+  width: 57px; /* collapsed width */
+  background-color: #2a2a2a;
+  padding: 1.5rem 0.5rem;
+  overflow-y: auto; /* scroll if too long */
+  overflow-x: hidden;
+  transition: width 0.5s ease;
+  position: fixed; /* stick left */
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.sidebar:hover {
+  width: 220px;
+}
+
+.sidebar h2 {
+  font-size: 1.5rem;
+  color: #00ff88;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+}
+
+.sidebar:hover h2 {
+  opacity: 1;
+}
+
+.sidebar a {
+  display: flex;
+  align-items: center;
+  color: #ccc;
+  padding: 10px 15px;
+  text-decoration: none;
+  margin-top: 10px;
+  border-radius: 6px;
+  transition: 0.2s;
+  white-space: nowrap;
+}
+
+.sidebar a i {
+  font-size: 1.2rem;
+  min-width: 24px;
+  text-align: center;
+  margin-right: 10px;
+}
+
+.sidebar .sidebar-text {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.sidebar:hover .sidebar-text {
+  opacity: 1;
+}
+
+.sidebar a:hover,
+.sidebar a.active {
+  background-color: #00ff88;
+  color: #000;
+}
+
+/* Main content adjusts for sidebar */
+.main {
+  margin-left: 57px; /* match collapsed sidebar */
+  flex-grow: 1;
+  padding: 1rem;
+  transition: margin-left 0.5s ease;
+}
+
+.sidebar:hover ~ .main {
+  margin-left: 220px; /* match expanded sidebar */
+}
+
+.main h1 {
+  color: #00ff88;
+  margin-bottom: 1rem;
+}
+
+form {
+  background: #2e2e2e;
+  padding: 1rem;
+  border-radius: 8px;
+  max-width: 500px;
+}
+
+label {
+  display: block;
+  margin: 1rem 0 0.3rem;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 5px;
+  border: none;
+  background: #444;
+  color: white;
+}
+
+button {
+  margin-top: 1rem;
+  padding: 0.7rem 1.5rem;
+  background-color: #00ff88;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+table {
+  width: 100%;
+  margin-top: 2rem;
+  border-collapse: collapse;
+}
+
+table,
+th,
+td {
+  border: 1px solid #444;
+}
+
+th,
+td {
+  padding: 10px;
+  text-align: center;
+}
+
+th {
+  background-color: #00ff88;
+  color: #000;
+}
+
+.actions button {
+  background: #ff4d4d;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.actions button:hover {
+  background: red;
+}
+
+/* Notifications */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 30px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  z-index: 999;
+}
+
+.notification-container i {
+  font-size: 24px;
+  color: #00ff88;
+  transition: transform 0.3s ease;
+}
+
+.notification-container:hover i {
+  transform: scale(1.1);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  border-radius: 50%;
+  padding: 2px 6px;
+  z-index: 10;
+}
+
+.notification-dropdown {
+  display: none;
+  position: absolute;
+  top: 50px;
+  right: 0;
+  width: 300px;
+  max-height: 350px;
+  overflow-y: auto;
+  background: #2e2e2e;
+  border: 1px solid #00ff88;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.notification-dropdown.active {
+  display: block;
+}
+
+.notification-dropdown li {
+  list-style: none;
+  padding: 10px;
+  border-bottom: 1px solid #444;
+  color: #fff;
+  transition: background 0.2s ease;
+}
+
+.notification-dropdown li:hover {
+  background: #444;
+}
+
+.notification-dropdown li strong {
+  color: #00ff88;
+}
+
+.notification-dropdown li small {
+  display: block;
+  color: #ccc;
+  margin-top: 4px;
+  font-size: 0.85rem;
+}

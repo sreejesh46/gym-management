@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Diet Details</title>
+    <link rel="stylesheet" href="sdb.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Matangi:wght@300..900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      .diet-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .diet-card {
+        background: #2e2e2e;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 0 5px #00ff88;
+      }
+
+      .diet-card h3 {
+        color: #00ff88;
+        margin-bottom: 0.5rem;
+      }
+
+      .diet-card p {
+        font-size: 0.9rem;
+      }
+
+      .diet-card img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+      }
+    </style>
+  </head>
+  <script>
+    // Highlight active sidebar tab based on current page
+    window.addEventListener("DOMContentLoaded", () => {
+      const links = document.querySelectorAll(".sidebar a");
+      const currentPage = location.pathname.split("/").pop();
+
+      links.forEach((link) => {
+        if (link.getAttribute("href") === currentPage) {
+          link.classList.add("active");
+        }
+      });
+    });
+  </script>
+  <body>
+    <div class="sidebar">
+      <h2>Admin Panel</h2>
+      <a href="admin-dashboard.html"
+        ><i class="fas fa-user-plus"></i> Add Member</a
+      >
+      <a href="view-members.html"><i class="fas fa-users"></i> View Members</a>
+      <a href="create-bills.html"
+        ><i class="fas fa-file-invoice"></i> Create Bills</a
+      >
+      <a href="fee-packages.html"><i class="fas fa-tags"></i> Fee Packages</a>
+      <a href="send-notification.html"
+        ><i class="fas fa-bell"></i> Send Notification</a
+      >
+      <a href="supplement-store.html"
+        ><i class="fas fa-store"></i> Supplement Store</a
+      >
+      <a href="diet-details.html"
+        ><i class="fas fa-utensils"></i> Diet Details</a
+      >
+      <a href="report-export.html"
+        ><i class="fas fa-file-export"></i> Export Reports</a
+      >
+      <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main">
+      <h1>Diet Plans</h1>
+      <form id="dietForm">
+        <label for="title">Plan Title</label>
+        <input type="text" id="title" required />
+
+        <label for="audience">Target Audience</label>
+        <input type="text" id="audience" required />
+
+        <label for="breakfast">Breakfast</label>
+        <input type="text" id="breakfast" required />
+
+        <label for="lunch">Lunch</label>
+        <input type="text" id="lunch" required />
+
+        <label for="dinner">Dinner</label>
+        <input type="text" id="dinner" required />
+
+        <label for="snacks">Snacks</label>
+        <input type="text" id="snacks" required />
+
+        <label for="image">Image URL (optional)</label>
+        <input
+          type="url"
+          id="image"
+          placeholder="Optional image of the diet plan"
+        />
+
+        <button type="submit">Add Diet Plan</button>
+      </form>
+
+      <div class="diet-container" id="dietList"></div>
+
+      <!-- Edit Diet Modal -->
+      <div
+        id="editDietModal"
+        style="
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: 9999;
+          align-items: center;
+          justify-content: center;
+        "
+      >
+        <div
+          style="
+            background: #222;
+            padding: 2rem;
+            border-radius: 10px;
+            min-width: 320px;
+            max-width: 90vw;
+            color: #fff;
+          "
+        >
+          <h2>Edit Diet Plan</h2>
+          <form id="editDietFormModal">
+            <input type="hidden" id="modalDietId" />
+            <label>Title</label>
+            <input id="modalDietTitle" type="text" />
+            <label>Audience</label>
+            <input id="modalDietAudience" type="text" />
+            <label>Breakfast</label>
+            <textarea id="modalDietBreakfast"></textarea>
+            <label>Lunch</label>
+            <textarea id="modalDietLunch"></textarea>
+            <label>Dinner</label>
+            <textarea id="modalDietDinner"></textarea>
+            <label>Snacks</label>
+            <textarea id="modalDietSnacks"></textarea>
+            <label>Image URL</label>
+            <input id="modalDietImage" type="text" />
+            <div style="margin-top: 8px">
+              <button type="submit">Save Changes</button>
+              <button type="button" id="modalDietCancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import {
+          getFirestore,
+          collection,
+          addDoc,
+          getDocs,
+          doc,
+          updateDoc,
+          getDoc,
+        } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = {
+          apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+          authDomain: "gym-management-system-540ea.firebaseapp.com",
+          projectId: "gym-management-system-540ea",
+          storageBucket: "gym-management-system-540ea.appspot.com",
+          messagingSenderId: "368679749818",
+          appId: "1:368679749818:web:21a7f5909db550aa5d1a83",
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth();
+        let isAdmin = false;
+
+        const form = document.getElementById("dietForm");
+        const dietList = document.getElementById("dietList");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const newPlan = {
+            title: document.getElementById("title").value,
+            audience: document.getElementById("audience").value,
+            breakfast: document.getElementById("breakfast").value,
+            lunch: document.getElementById("lunch").value,
+            dinner: document.getElementById("dinner").value,
+            snacks: document.getElementById("snacks").value,
+            image: document.getElementById("image").value || "",
+          };
+
+          await addDoc(collection(db, "dietPlans"), newPlan);
+          form.reset();
+          loadDietPlans();
+        });
+
+        async function loadDietPlans() {
+          dietList.innerHTML = "";
+          const snapshot = await getDocs(collection(db, "dietPlans"));
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const div = document.createElement("div");
+            div.className = "diet-card";
+            div.innerHTML = `
+            <h3>${data.title}</h3>
+            <p><strong>Audience:</strong> ${data.audience}</p>
+            <p><strong>Breakfast:</strong> ${data.breakfast}</p>
+            <p><strong>Lunch:</strong> ${data.lunch}</p>
+            <p><strong>Dinner:</strong> ${data.dinner}</p>
+            <p><strong>Snacks:</strong> ${data.snacks}</p>
+            ${
+              data.image
+                ? `<img src="${data.image}" alt="${data.title} Image">`
+                : ""
+            }
+            ${
+              isAdmin
+                ? `<button class="edit-diet-btn" data-id="${docSnap.id}">Edit</button>`
+                : ""
+            }
+          `;
+            dietList.appendChild(div);
+          });
+          if (isAdmin) {
+            document.querySelectorAll(".edit-diet-btn").forEach((btn) => {
+              btn.addEventListener("click", async (e) => {
+                const dietId = btn.getAttribute("data-id");
+                const snap = await getDoc(doc(db, "dietPlans", dietId));
+                if (!snap.exists()) return alert("Diet plan not found");
+                const d = snap.data();
+                document.getElementById("modalDietId").value = dietId;
+                document.getElementById("modalDietTitle").value = d.title || "";
+                document.getElementById("modalDietAudience").value =
+                  d.audience || "";
+                document.getElementById("modalDietBreakfast").value =
+                  d.breakfast || "";
+                document.getElementById("modalDietLunch").value = d.lunch || "";
+                document.getElementById("modalDietDinner").value =
+                  d.dinner || "";
+                document.getElementById("modalDietSnacks").value =
+                  d.snacks || "";
+                document.getElementById("modalDietImage").value = d.image || "";
+                document.getElementById("editDietModal").style.display = "flex";
+              });
+            });
+          }
+        }
+
+        // Check admin status
+        auth.onAuthStateChanged(async (user) => {
+          isAdmin = false;
+          if (user) {
+            const snap = await getDoc(doc(db, "members", user.uid));
+            const data = snap.data();
+            if (data && data.role === "admin") isAdmin = true;
+          }
+          loadDietPlans();
+        });
+
+        // Modal form submit
+        document
+          .getElementById("editDietFormModal")
+          .addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const id = document.getElementById("modalDietId").value;
+            const updated = {
+              title: document.getElementById("modalDietTitle").value,
+              audience: document.getElementById("modalDietAudience").value,
+              breakfast: document.getElementById("modalDietBreakfast").value,
+              lunch: document.getElementById("modalDietLunch").value,
+              dinner: document.getElementById("modalDietDinner").value,
+              snacks: document.getElementById("modalDietSnacks").value,
+              image: document.getElementById("modalDietImage").value,
+            };
+            try {
+              await updateDoc(doc(db, "dietPlans", id), updated);
+              alert("Diet plan updated");
+              document.getElementById("editDietModal").style.display = "none";
+              loadDietPlans();
+            } catch (err) {
+              console.error(err);
+              alert("Failed to update");
+            }
+          });
+
+        document
+          .getElementById("modalDietCancel")
+          .addEventListener("click", () => {
+            document.getElementById("editDietModal").style.display = "none";
+          });
+      </script>
+    </div>
+  </body>
+</html>

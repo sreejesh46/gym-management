@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Bills - GYM Management</title>
+    <link rel="stylesheet" href="sdb.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Matangi:wght@300..900&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div id="toast" style="
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #333;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      display: none;
+      z-index: 1000;
+    "></div>
+
+    <div class="sidebar">
+      <h2>Admin Panel</h2>
+      <a href="admin-dashboard.html"><i class="fas fa-user-plus"></i> Add Member</a>
+      <a href="view-members.html"><i class="fas fa-users"></i> View Members</a>
+      <a href="create-bills.html" class="active"><i class="fas fa-file-invoice"></i> Create Bills</a>
+      <a href="fee-packages.html"><i class="fas fa-tags"></i> Fee Packages</a>
+      <a href="send-notification.html"><i class="fas fa-bell"></i> Send Notification</a>
+      <a href="supplement-store.html"><i class="fas fa-store"></i> Supplement Store</a>
+      <a href="diet-details.html"><i class="fas fa-utensils"></i> Diet Details</a>
+      <a href="report-export.html"><i class="fas fa-file-export"></i> Export Reports</a>
+      <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+
+    <div class="main" style="display: flex; gap: 2rem; align-items: flex-start">
+      <div style="flex: 2">
+        <h1>Create Bill</h1>
+        <form id="createBillForm">
+          <label for="member">Select Member:</label>
+          <select id="member" required>
+            <option value="">-- Select Member --</option>
+          </select>
+
+          <label for="package">Package:</label>
+          <select id="package" required>
+            <option value="">-- Select Package --</option>
+          </select>
+
+          <label for="amount">Amount (₹):</label>
+          <input type="number" id="amount" readonly />
+
+          <label for="date">Billing Date:</label>
+          <input type="date" id="date" required />
+
+          <label for="dueDate">Due Date:</label>
+          <input type="date" id="dueDate" required readonly />
+
+          <button type="submit">Create Bill</button>
+        </form>
+
+        <h2>Billing History</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Billing Date</th>
+              <th>Due Date</th>
+              <th>Amount (₹)</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="billHistory"></tbody>
+        </table>
+        <p id="statusMsg" style="margin-top: 1rem; font-weight: bold"></p>
+      </div>
+
+      <div style="flex: 1; background: rgba(255, 255, 255, 0.07); border-radius: 12px; padding: 1rem; min-width: 300px;">
+        <h2>Manage Bills</h2>
+        <ul id="adminBillList" style="list-style: none; padding: 0"></ul>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+      import {
+        getFirestore,
+        collection,
+        addDoc,
+        getDocs
+      } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+        authDomain: "gym-management-system-540ea.firebaseapp.com",
+        projectId: "gym-management-system-540ea",
+        storageBucket: "gym-management-system-540ea.appspot.com",
+        messagingSenderId: "368679749818",
+        appId: "1:368679749818:web:21a7f5909db550aa5d1a83",
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+
+      const memberSelect = document.getElementById("member");
+      const packageSelect = document.getElementById("package");
+      const amountInput = document.getElementById("amount");
+      const historyTable = document.getElementById("billHistory");
+      const adminBillList = document.getElementById("adminBillList");
+      const toast = document.getElementById("toast");
+
+      function showToast(message, success = true) {
+        toast.textContent = message;
+        toast.style.backgroundColor = success ? "#28a745" : "#dc3545";
+        toast.style.display = "block";
+        setTimeout(() => { toast.style.display = "none"; }, 3000);
+      }
+
+      // Load members
+      const membersSnap = await getDocs(collection(db, "members"));
+      const memberMap = new Map();
+      membersSnap.forEach((doc) => {
+        const member = doc.data();
+        memberMap.set(doc.id, member);
+        const displayName = member.fullName || member.name || member.full_name || "—";
+        const displayEmail = member.email || member.Email || "—";
+        const option = document.createElement("option");
+        option.value = doc.id;
+        option.textContent = `${displayName} (${displayEmail})`;
+        memberSelect.appendChild(option);
+      });
+
+      // Load packages
+      const packagesSnap = await getDocs(collection(db, "packages"));
+      const packageMap = new Map();
+      packagesSnap.forEach((doc) => {
+        const data = doc.data();
+        const title = data.title || data.name || "";
+        const price = data.price || 0;
+        packageMap.set(title.toLowerCase(), { id: doc.id, price });
+        const option = document.createElement("option");
+        option.value = title;
+        option.textContent = `${title} (₹${price})`;
+        option.dataset.price = price;
+        packageSelect.appendChild(option);
+      });
+
+      // Auto-update amount when package changes manually
+      packageSelect.addEventListener("change", () => {
+        const selectedOption = packageSelect.selectedOptions[0];
+        amountInput.value = selectedOption ? selectedOption.dataset.price : "";
+      });
+
+      // Automatically set due date one month later
+      document.getElementById("date").addEventListener("change", function () {
+        const billingDate = this.value;
+        if (!billingDate) return;
+        const dateObj = new Date(billingDate);
+        dateObj.setMonth(dateObj.getMonth() + 1);
+        if (dateObj.getDate() !== new Date(billingDate).getDate()) dateObj.setDate(0);
+        document.getElementById("dueDate").value = dateObj.toISOString().slice(0,10);
+      });
+
+      // Load billing history
+      async function loadBillingHistory(memberId) {
+        historyTable.innerHTML = "";
+        adminBillList.innerHTML = "";
+        const billsSnap = await getDocs(collection(db, "bills"));
+
+        billsSnap.forEach((doc) => {
+          const bill = doc.data();
+          if (bill.memberId === memberId) {
+            // History table
+            historyTable.innerHTML += `
+              <tr>
+                <td>${bill.date || "—"}</td>
+                <td>${bill.dueDate || "—"}</td>
+                <td>₹${bill.amount || 0}</td>
+                <td>${bill.status || "Unpaid"}</td>
+              </tr>
+            `;
+
+            // Admin bill list
+            const li = document.createElement("li");
+            li.style.marginBottom = "1rem";
+            li.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <strong>Bill:</strong> ₹${bill.amount || 0}<br>
+                  <strong>Date:</strong> ${bill.date || "—"}<br>
+                  <strong>Status:</strong> <span id="status-${doc.id}">${bill.status || "Unpaid"}</span>
+                </div>
+                <div>
+                  <button data-id="${doc.id}" data-status="Paid" style="background: #00ff88; color: #222; border: none; border-radius: 6px; padding: 6px 12px; margin-right: 6px; cursor: pointer;">Mark Paid</button>
+                  <button data-id="${doc.id}" data-status="Unpaid" style="background: #ff4d4d; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer;">Mark Unpaid</button>
+                </div>
+              </div>
+            `;
+            adminBillList.appendChild(li);
+          }
+        });
+
+        // Mark Paid / Unpaid event listeners
+// Mark Paid / Unpaid event listeners
+adminBillList.querySelectorAll("button").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const billId = btn.dataset.id;
+    const newStatus = btn.dataset.status;
+    const { doc, getDoc, updateDoc } = await import(
+      "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"
+    );
+
+    try {
+      const updateData = { status: newStatus };
+
+      // If marking Paid, set monthsPaid based on dueDate
+      if (newStatus === "Paid") {
+        const billSnap = await getDoc(doc(db, "bills", billId));
+        const billData = billSnap.data();
+        if (billData && billData.dueDate) {
+          const dueDateObj = new Date(billData.dueDate);
+          // Format: "October 2025"
+          const options = { month: "long", year: "numeric" };
+          updateData.monthsPaid = dueDateObj.toLocaleDateString("en-US", options);
+        }
+      } else {
+        // If marking Unpaid, clear monthsPaid
+        updateData.monthsPaid = "";
+      }
+
+      await updateDoc(doc(db, "bills", billId), updateData);
+
+      // Update the admin UI immediately
+      document.getElementById(`status-${billId}`).textContent = newStatus;
+      showToast(`Bill marked as ${newStatus}`);
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to update bill status", false);
+    }
+  });
+});
+
+      }
+
+      // When member selected, set package & amount
+      memberSelect.addEventListener("change", async () => {
+        const memberId = memberSelect.value;
+        const member = memberMap.get(memberId);
+        if (!member) return;
+
+        const memberPackage = (member.package || member.packageName || member.plan || "").trim();
+        if (memberPackage && packageMap.has(memberPackage.toLowerCase())) {
+          packageSelect.value = memberPackage;
+          amountInput.value = packageMap.get(memberPackage.toLowerCase()).price;
+        } else {
+          packageSelect.value = "";
+          amountInput.value = "";
+        }
+
+        await loadBillingHistory(memberId);
+      });
+
+      // Create Bill
+      document.getElementById("createBillForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const memberId = memberSelect.value;
+        const packageName = packageSelect.value;
+        const amount = amountInput.value;
+        const date = document.getElementById("date").value;
+        const dueDate = document.getElementById("dueDate").value;
+
+        try {
+          await addDoc(collection(db, "bills"), {
+            memberId, packageName, amount, date, dueDate, status: "Unpaid"
+          });
+          showToast("Bill created successfully!");
+          e.target.reset();
+          packageSelect.value = "";
+          amountInput.value = "";
+          await loadBillingHistory(memberId);
+        } catch (err) {
+          console.error(err);
+          showToast("Failed to create bill", false);
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="sdb.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Matangi:wght@300..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <title>View Members - Admin Dashboard</title>
+</head>
+<script>
+  // Highlight active sidebar tab based on current page
+  window.addEventListener('DOMContentLoaded', () => {
+    const links = document.querySelectorAll('.sidebar a');
+    const currentPage = location.pathname.split('/').pop();
+
+    links.forEach(link => {
+      if (link.getAttribute('href') === currentPage) {
+        link.classList.add('active');
+      }
+    });
+  });
+</script>
+<body>
+
+  <div class="sidebar">
+    <h2>Admin Panel</h2>
+    <a href="admin-dashboard.html"><i class="fas fa-user-plus"></i> Add Member</a>
+    <a href="view-members.html"><i class="fas fa-users"></i> View Members</a>
+    <a href="create-bills.html"><i class="fas fa-file-invoice"></i> Create Bills</a>
+    <a href="fee-packages.html"><i class="fas fa-tags"></i> Fee Packages</a>
+    <a href="send-notification.html"><i class="fas fa-bell"></i> Send Notification</a>
+    <a href="supplement-store.html"><i class="fas fa-store"></i> Supplement Store</a>
+    <a href="diet-details.html"><i class="fas fa-utensils"></i> Diet Details</a>
+    <a href="report-export.html"><i class="fas fa-file-export"></i> Export Reports</a>
+    <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+
+  <div class="main">
+    <h1>All Registered Members</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Member ID</th>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Phone</th>
+      <th>Package</th>
+      <th>Fees Status</th> <!-- NEW -->
+    </tr>
+  </thead>
+  <tbody id="membersTable">
+    <!-- Members will appear here -->
+  </tbody>
+</table>
+  </div>
+
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+  import {
+    getFirestore,
+    collection,
+    onSnapshot,
+    query,
+    where,
+    getDocs
+  } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+    authDomain: "gym-management-system-540ea.firebaseapp.com",
+    projectId: "gym-management-system-540ea",
+    storageBucket: "gym-management-system-540ea.appspot.com",
+    messagingSenderId: "368679749818",
+    appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const membersTable = document.getElementById("membersTable");
+
+  // Small helper to avoid inserting undefined/null and to escape HTML
+  function escapeHtml(value) {
+    if (value === undefined || value === null) return '—';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  const loadMembers = () => {
+    const membersRef = collection(db, "members");
+    onSnapshot(membersRef, async (snapshot) => {
+      membersTable.innerHTML = "";
+
+      for (const docSnap of snapshot.docs) {
+        const member = docSnap.data();
+        const memberId = docSnap.id;
+
+        // Query by memberId first (new system), fallback to email if needed
+        const billsRef = collection(db, "bills");
+        const q1 = query(billsRef, where("memberId", "==", memberId));
+        const q2 = query(billsRef, where("email", "==", member.email));
+
+        let billsSnapshot = await getDocs(q1);
+        if (billsSnapshot.empty) {
+          billsSnapshot = await getDocs(q2); // fallback to email
+        }
+
+        let latestBill = null;
+        billsSnapshot.forEach((billDoc) => {
+          const bill = billDoc.data();
+          if (!latestBill || new Date(bill.dueDate) > new Date(latestBill.dueDate)) {
+            latestBill = bill;
+          }
+        });
+
+  let feeStatus = "No Bill Found";
+  let remaining = "-";
+
+        if (latestBill) {
+          feeStatus = latestBill.status === "Paid" ? "✅ Paid" : "❌ Pending";
+          const today = new Date();
+          const dueDate = new Date(latestBill.dueDate);
+          const timeDiff = dueDate - today;
+          const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+          remaining = daysLeft > 0 ? `${daysLeft} day(s)` : "Expired";
+        }
+
+        // Use sensible fallbacks for fields that may be stored under different keys
+        const displayName = member.fullName || member.name || member.full_name || '—';
+        const displayEmail = member.email || member.Email || '—';
+        const displayPhone = member.phone || member.phoneNumber || member.mobile || '—';
+        const displayPackage = member.package || member.packageName || member.plan || '—';
+
+        const row = `
+          <tr>
+            <td>${escapeHtml(memberId)}</td>
+            <td>${escapeHtml(displayName)}</td>
+            <td>${escapeHtml(displayEmail)}</td>
+            <td>${escapeHtml(displayPhone)}</td>
+            <td>${escapeHtml(displayPackage)}</td>
+            <td>${escapeHtml(feeStatus)} <br><small>${escapeHtml(remaining)}</small></td>
+          </tr>
+        `;
+        membersTable.innerHTML += row;
+      }
+    });
+  };
+
+  loadMembers();
+</script>
+
+  </script>
+
+</body>
+</html>

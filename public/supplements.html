@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Supplements</title>
+  <link rel="stylesheet" href="sdb.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Matangi:wght@300..900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <style>
+    .store-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background: #2e2e2e;
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 0 5px #00ff88;
+      position: relative;
+      overflow: hidden;
+    }
+    .card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+    .card h3 { margin: 0.5rem 0; color: #00ff88; }
+    .card p { margin: 0.2rem 0; color: #ddd; }
+    .card .price { font-weight: 700; color: #fff; margin-top: .35rem; }
+    .card .price del { color: #bbb; margin-right: 6px; font-weight: 400; }
+    .card .badge { color: #00ff88; font-weight: 700; margin-top: 6px; }
+    .card .actions { margin-top: 10px; }
+    .btn {
+      display:inline-block;
+      text-decoration:none;
+      background:#00ff88;
+      color:#000;
+      padding:8px 12px;
+      border-radius:6px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .btn.secondary { background:#ff4d4d; color:#fff; }
+    .muted { color: #999; }
+    .notice { color: #ccc; background:#232323; padding:1rem; border-radius:8px; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>Member Panel</h2>
+    <a href="member-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="view-bills.html"><i class="fas fa-file-invoice"></i> View Bills</a>
+    <a href="diet-plan.html"><i class="fas fa-utensils"></i> Diet Plan</a>
+    <a href="supplements.html"><i class="fas fa-capsules"></i> Supplements</a>
+    <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
+  </div>
+
+  <div class="main" style="padding:2rem;">
+    <h1 style="color:#00ff88">Supplements Available</h1>
+    <div id="storeItems" class="store-container"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      getDocs,
+      addDoc,
+      doc,
+      getDoc
+    } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDoiS09B_JD21g60sVV1eYInCVdQOqxv7k",
+      authDomain: "gym-management-system-540ea.firebaseapp.com",
+      projectId: "gym-management-system-540ea",
+      storageBucket: "gym-management-system-540ea.appspot.com",
+      messagingSenderId: "368679749818",
+      appId: "1:368679749818:web:21a7f5909db550aa5d1a83"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    const storeItems = document.getElementById("storeItems");
+
+    // Globals set after auth
+    let currentMemberPackage = ""; // lowercased: "basic" / "premium" / "elite"
+    let memberName = "";
+    let memberEmail = "";
+
+    // Listen for auth -> fetch member doc once, then load supplements
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        alert("Not logged in");
+        window.location.href = "index.html";
+        return;
+      }
+
+      try {
+        const memberRef = doc(db, "members", user.uid);
+        const memberSnap = await getDoc(memberRef);
+        if (!memberSnap.exists()) {
+          alert("Member data not found");
+          window.location.href = "index.html";
+          return;
+        }
+
+        const memberData = memberSnap.data();
+        currentMemberPackage = (memberData.package || "").toLowerCase();
+        memberName = memberData.name || "";
+        memberEmail = memberData.email || "";
+
+        // Now load supplements based on package
+        await loadSupplements();
+      } catch (err) {
+        console.error(err);
+        alert("Error loading member data");
+      }
+    });
+
+    // Single loader for supplements
+    async function loadSupplements() {
+      storeItems.innerHTML = "";
+
+      // Basic users -> show message and return
+      if (currentMemberPackage.includes("basic") || currentMemberPackage === "") {
+        storeItems.innerHTML = `<div class="notice">Supplements are available only for <strong>Premium</strong> and <strong>Elite</strong> members. Please upgrade your package to access supplements.</div>`;
+        return;
+      }
+
+      // Fetch supplements
+      const snapshot = await getDocs(collection(db, "supplements"));
+
+      // If none, show message
+      if (snapshot.empty) {
+        storeItems.innerHTML = `<div class="notice">No supplements found.</div>`;
+        return;
+      }
+
+      snapshot.forEach(docItem => {
+        const data = docItem.data();
+
+        // Safe field fallbacks
+        const name = data.name || "Unnamed Product";
+        const image = data.image || "";
+        const description = data.description || data.brand || "";
+        const rawPrice = Number(data.price) || 0;
+        const stock = (data.stock === undefined || data.stock === "") ? "Unlimited" : data.stock;
+        const buyLink = data.buyLink || ""; // optional external link
+
+        // Price display (elite gets 20% off)
+        let priceHtml = `<p class="price">Price: ₹${rawPrice.toFixed(2)}</p>`;
+
+        if (currentMemberPackage.includes("elite")) {
+          const discounted = rawPrice * 0.8; // 20% off
+          priceHtml = `
+            <p class="price"><del>₹${rawPrice.toFixed(2)}</del> ₹${discounted.toFixed(2)}</p>
+            <p class="badge">Elite Discount: 20% Off</p>
+          `;
+        } else if (currentMemberPackage.includes("premium")) {
+          const discounted = rawPrice * 0.9; // 10% off
+          priceHtml = `
+            <p class="price"><del>₹${rawPrice.toFixed(2)}</del> ₹${discounted.toFixed(2)}</p>
+            <p class="badge">Premium Discount: 10% Off</p>
+          `;
+        }
+        // Build actions: prefer external buyLink if present; otherwise internal buy
+        let actionsHtml = "";
+        if (buyLink && (currentMemberPackage.includes("premium") || currentMemberPackage.includes("elite"))) {
+          // Open external product page in new tab
+          actionsHtml = `<a class="btn" href="${buyLink}" target="_blank" rel="noopener noreferrer">Buy Now</a>`;
+        } else {
+          // No external link -> fallback to internal order request
+          actionsHtml = `<button class="btn" onclick="buySupplement('${docItem.id}', ${JSON.stringify(name)}, ${rawPrice})">Request Purchase</button>`;
+        }
+
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          ${image ? `<img src="${image}" alt="${name}" />` : ""}
+          <h3>${name}</h3>
+          ${description ? `<p class="muted">${description}</p>` : ""}
+          ${priceHtml}
+          <p class="muted">Stock: ${stock}</p>
+          <div class="actions">${actionsHtml}</div>
+        `;
+
+        storeItems.appendChild(div);
+      });
+    }
+
+    // Internal purchase request (writes an order doc)
+window.buySupplement = async (id, name, price, link) => {
+  if (!memberEmail || !memberName) {
+    alert("User data missing.");
+    return;
+  }
+
+  await addDoc(collection(db, "supplement_orders"), {
+    supplementId: id,
+    supplementName: name,
+    price: price,
+    memberEmail: memberEmail,
+    memberName: memberName,
+    timestamp: new Date().toISOString(),
+    status: "Pending",
+  });
+
+  alert(`Your request to buy "${name}" has been sent to the admin.`);
+
+  // Redirect to admin's purchase link
+  if (link) {
+    window.location.href = link;
+  } else {
+    alert("No purchase link available for this supplement.");
+  }
+};
+  </script>
+</body>
+</html>

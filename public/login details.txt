@@ -1,0 +1,17 @@
+LOGIN DETAILS
+
+admin login :
+admin@gmail.com   
+pw : sreejesh
+
+member login(basic): 
+arjun.elite@testmail.com
+pw: Basic@123
+
+member login(elite): 
+rahul.elite@testmail.com
+pw: rahul123
+
+member login(premium):
+sneha.premium@testmail.com
+pw: Premium@123
