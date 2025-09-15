@@ -82,6 +82,17 @@
   const db = getFirestore(app);
   const membersTable = document.getElementById("membersTable");
 
+  // Small helper to avoid inserting undefined/null and to escape HTML
+  function escapeHtml(value) {
+    if (value === undefined || value === null) return '—';
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   const loadMembers = () => {
     const membersRef = collection(db, "members");
     onSnapshot(membersRef, async (snapshot) => {
@@ -109,8 +120,8 @@
           }
         });
 
-        let feeStatus = "No Bill Found";
-        let remaining = "-";
+  let feeStatus = "No Bill Found";
+  let remaining = "-";
 
         if (latestBill) {
           feeStatus = latestBill.status === "Paid" ? "✅ Paid" : "❌ Pending";
@@ -121,14 +132,20 @@
           remaining = daysLeft > 0 ? `${daysLeft} day(s)` : "Expired";
         }
 
+        // Use sensible fallbacks for fields that may be stored under different keys
+        const displayName = member.fullName || member.name || member.full_name || '—';
+        const displayEmail = member.email || member.Email || '—';
+        const displayPhone = member.phone || member.phoneNumber || member.mobile || '—';
+        const displayPackage = member.package || member.packageName || member.plan || '—';
+
         const row = `
           <tr>
-            <td>${memberId}</td>
-            <td>${member.name}</td>
-            <td>${member.email}</td>
-            <td>${member.phone}</td>
-            <td>${member.package}</td>
-            <td>${feeStatus} <br><small>${remaining}</small></td>
+            <td>${escapeHtml(memberId)}</td>
+            <td>${escapeHtml(displayName)}</td>
+            <td>${escapeHtml(displayEmail)}</td>
+            <td>${escapeHtml(displayPhone)}</td>
+            <td>${escapeHtml(displayPackage)}</td>
+            <td>${escapeHtml(feeStatus)} <br><small>${escapeHtml(remaining)}</small></td>
           </tr>
         `;
         membersTable.innerHTML += row;

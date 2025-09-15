@@ -19,8 +19,8 @@
     <h2>Member Panel</h2>
     <a href="member-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
     <a href="view-bills.html"><i class="fas fa-file-invoice"></i> View Bills</a>
-    <a href="diet-plan.html"><i class="fas fa-utensils"></i> Diet Plan</a>
-    <a href="supplements.html"><i class="fas fa-capsules"></i> Supplements</a>
+  <a href="diet-plan.html" id="dietPlanLink" style="display:none;"><i class="fas fa-utensils"></i> Diet Plan <span id="dietLock" style="display:none;"></span></a>
+  <a href="supplements.html" id="supplementsLink" style="display:none;"><i class="fas fa-capsules"></i> Supplements <span id="suppLock" style="display:none;"></span></a>
     <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
 
@@ -35,11 +35,25 @@
     
     <h1>Welcome, <span id="memberName">Loading...</span></h1>
 
+
     <div class="info-box">
       <p><strong>Email:</strong> <span id="memberEmail">Loading...</span></p>
       <p><strong>Phone:</strong> <span id="memberPhone">Loading...</span></p>
       <p><strong>Package:</strong> <span id="memberPackage">Loading...</span></p>
+      <p><strong>Height (cm):</strong> <span id="memberHeight">-</span></p>
+      <p><strong>Weight (kg):</strong> <span id="memberWeight">-</span></p>
+      <p><strong>Age:</strong> <span id="memberAge">-</span></p>
     </div>
+
+
+    <h2>Update Profile</h2>
+    <form id="profileForm" style="max-width:400px; margin-bottom:2rem;">
+      <label for="height">Height (cm)</label>
+      <input type="number" id="height" min="0" />
+      <label for="weight">Weight (kg)</label>
+      <input type="number" id="weight" min="0" />
+      <button type="submit">Save Profile</button>
+    </form>
 
     <h2>Bill Notifications</h2>
     <table>
@@ -100,10 +114,65 @@
         const member = userDoc.data();
         currentMemberId = uid;
 
-        document.getElementById("memberName").textContent = member.name;
-        document.getElementById("memberEmail").textContent = member.email;
-        document.getElementById("memberPhone").textContent = member.phone;
-        document.getElementById("memberPackage").textContent = member.package;
+
+  document.getElementById("memberName").textContent = member.name;
+  document.getElementById("memberEmail").textContent = member.email;
+  document.getElementById("memberPhone").textContent = member.phone;
+  document.getElementById("memberPackage").textContent = member.package;
+
+        document.getElementById("memberHeight").textContent = member.height || "-";
+        document.getElementById("memberWeight").textContent = member.weight || "-";
+        // Calculate age from dob
+        let age = "-";
+        if (member.dob) {
+          const dobDate = new Date(member.dob);
+          const today = new Date();
+          age = today.getFullYear() - dobDate.getFullYear();
+          const m = today.getMonth() - dobDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < dobDate.getDate())) {
+            age--;
+          }
+        }
+        document.getElementById("memberAge").textContent = age;
+
+        // Pre-fill profile form
+        document.getElementById("height").value = member.height || "";
+        document.getElementById("weight").value = member.weight || "";
+  // DOB field removed from form
+// Profile update handler
+document.getElementById("profileForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const height = document.getElementById("height").value;
+  const weight = document.getElementById("weight").value;
+  if (!currentMemberId) return alert("User not loaded");
+  try {
+    const { doc, updateDoc } = await import('https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js');
+    await updateDoc(doc(db, "members", currentMemberId), {
+      height,
+      weight
+    });
+    alert("Profile updated!");
+    document.getElementById("memberHeight").textContent = height;
+    document.getElementById("memberWeight").textContent = weight;
+    // Age remains read-only, calculated from stored dob if present
+  } catch (err) {
+    alert("Failed to update profile");
+  }
+});
+
+        // Blur and lock for Basic Fitness users
+        const pkg = (member.package || '').toLowerCase();
+        const dietLink = document.getElementById('dietPlanLink');
+        const suppLink = document.getElementById('supplementsLink');
+        const dietLock = document.getElementById('dietLock');
+        const suppLock = document.getElementById('suppLock');
+        if (pkg.includes('basic')) {
+          dietLink.style.display = 'none';
+          suppLink.style.display = 'none';
+        } else {
+          dietLink.style.display = '';
+          suppLink.style.display = '';
+        }
 
         loadBills(uid);          // 🔁 Load bills using member ID
         loadNotifications(uid, member.package);  // 🔁 Load admin notifications
@@ -182,7 +251,7 @@
       badge.style.display = "none";
     }
   }
-
+ 
   const notifBell = document.getElementById('notifBell');
   const notifDropdown = document.getElementById('notifDropdown');
 

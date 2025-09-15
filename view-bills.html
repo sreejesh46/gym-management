@@ -13,8 +13,8 @@
     <h2>Member Panel</h2>
     <a href="member-dashboard.html"><i class="fas fa-home"></i> Dashboard</a>
     <a href="view-bills.html" class="active"><i class="fas fa-file-invoice"></i> View Bills</a>
-    <a href="diet-plan.html"><i class="fas fa-utensils"></i> Diet Plan</a>
-    <a href="supplements.html"><i class="fas fa-capsules"></i> Supplements</a>
+  <a href="diet-plan.html" id="dietPlanLink" style="display:none;"><i class="fas fa-utensils"></i> Diet Plan</a>
+  <a href="supplements.html" id="supplementsLink" style="display:none;"><i class="fas fa-capsules"></i> Supplements</a>
     <a href="index.html"><i class="fas fa-sign-out-alt"></i> Logout</a>
   </div>
 
@@ -64,6 +64,22 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         const uid = user.uid;
+        // Get member package and hide links if Basic Fitness
+        const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js');
+        const userDoc = await getDoc(doc(db, "members", uid));
+        if (userDoc.exists()) {
+          const member = userDoc.data();
+          const pkg = (member.package || '').toLowerCase();
+          const dietLink = document.getElementById('dietPlanLink');
+          const suppLink = document.getElementById('supplementsLink');
+          if (pkg.includes('basic')) {
+            dietLink.style.display = 'none';
+            suppLink.style.display = 'none';
+          } else {
+            dietLink.style.display = '';
+            suppLink.style.display = '';
+          }
+        }
         loadBills(uid);
       } else {
         alert("You are not logged in.");

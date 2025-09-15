@@ -59,6 +59,41 @@
 
       <button type="submit">Add Member</button>
     </form>
+    
+    <h2>Manage Diet Plans</h2>
+    <div id="dietAdmin">
+      <div style="display:flex; gap:2rem; flex-wrap:wrap;">
+        <div style="flex:1; min-width:320px;">
+          <h3>Existing Diet Plans</h3>
+          <ul id="dietListAdmin" style="list-style:none; padding:0;"></ul>
+        </div>
+
+        <div style="flex:1; min-width:320px;">
+          <h3>Edit Diet Plan</h3>
+          <form id="editDietForm">
+            <input type="hidden" id="dietId" />
+            <label>Title</label>
+            <input id="dietTitle" type="text" />
+            <label>Audience</label>
+            <input id="dietAudience" type="text" />
+            <label>Breakfast</label>
+            <textarea id="dietBreakfast"></textarea>
+            <label>Lunch</label>
+            <textarea id="dietLunch"></textarea>
+            <label>Dinner</label>
+            <textarea id="dietDinner"></textarea>
+            <label>Snacks</label>
+            <textarea id="dietSnacks"></textarea>
+            <label>Image URL</label>
+            <input id="dietImage" type="text" />
+            <div style="margin-top:8px;">
+              <button type="submit">Save Changes</button>
+              <button type="button" id="dietCancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 <h2>Members List</h2>
 <div class="table-wrapper">
   <table>
@@ -150,7 +185,13 @@
       const phone = document.getElementById("phone").value;
       const packageValue = document.getElementById("package").value;
 
-      const newMember = { name, email, phone, package: packageValue };
+      const newMember = {
+        name,
+        fullName: name, // Always set fullName for compatibility
+        email,
+        phone,
+        package: packageValue
+      };
       console.log("📤 Submitting new member:", newMember);
       addMember(newMember);
       e.target.reset();
@@ -173,6 +214,73 @@
       });
     };
     loadPackages();
+    
+    // --- Diet Plans admin management ---
+    import { getFirestore as getFs, collection as coll, getDocs as gDocs, doc as docFn, updateDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const dietListAdmin = document.getElementById('dietListAdmin');
+    const editDietForm = document.getElementById('editDietForm');
+
+    async function loadDietPlansAdmin() {
+      dietListAdmin.innerHTML = '';
+      const snapshot = await gDocs(coll(db, 'dietPlans'));
+      snapshot.forEach(d => {
+        const data = d.data();
+        const li = document.createElement('li');
+        li.style.padding = '8px';
+        li.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+        li.innerHTML = `<strong>${data.title}</strong> <br><small>${data.audience || ''}</small> <div style="margin-top:6px;"><button data-id="${d.id}" class="editDietBtn">Edit</button></div>`;
+        dietListAdmin.appendChild(li);
+      });
+
+      // Attach handlers
+      document.querySelectorAll('.editDietBtn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = btn.getAttribute('data-id');
+          const snap = await gDocs(coll(db, 'dietPlans')); // small fetch to find doc
+          let found = null;
+          snap.forEach(s => { if (s.id === id) found = { id: s.id, data: s.data() }; });
+          if (!found) return alert('Failed to load diet plan');
+          document.getElementById('dietId').value = found.id;
+          document.getElementById('dietTitle').value = found.data.title || '';
+          document.getElementById('dietAudience').value = found.data.audience || '';
+          document.getElementById('dietBreakfast').value = found.data.breakfast || '';
+          document.getElementById('dietLunch').value = found.data.lunch || '';
+          document.getElementById('dietDinner').value = found.data.dinner || '';
+          document.getElementById('dietSnacks').value = found.data.snacks || '';
+          document.getElementById('dietImage').value = found.data.image || '';
+          window.scrollTo({ top: 200, behavior: 'smooth' });
+        });
+      });
+    }
+
+    editDietForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('dietId').value;
+      if (!id) return alert('Select a diet plan first');
+      const updated = {
+        title: document.getElementById('dietTitle').value,
+        audience: document.getElementById('dietAudience').value,
+        breakfast: document.getElementById('dietBreakfast').value,
+        lunch: document.getElementById('dietLunch').value,
+        dinner: document.getElementById('dietDinner').value,
+        snacks: document.getElementById('dietSnacks').value,
+        image: document.getElementById('dietImage').value
+      };
+      try {
+        await updateDoc(docFn(db, 'dietPlans', id), updated);
+        alert('Diet plan updated');
+        loadDietPlansAdmin();
+        editDietForm.reset();
+      } catch (err) {
+        console.error(err);
+        alert('Failed to update');
+      }
+    });
+
+    document.getElementById('dietCancel').addEventListener('click', (e) => { editDietForm.reset(); });
+
+    loadDietPlansAdmin();
   </script>
 </body>
 </html>
